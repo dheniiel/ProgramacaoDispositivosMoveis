@@ -1,6 +1,6 @@
-double? chuvaMn;
+double? chuvaMn = 15;
 
-double quantidadeChuva(double? chuvaMn){
+String quantidadeChuva(double? chuvaMn){
   
   var situacao;
   
@@ -8,10 +8,10 @@ double quantidadeChuva(double? chuvaMn){
     situacao = "Sem registro";
   }
   else if(chuvaMn < 20){
-    situacao = "seca";
+    situacao = "Seca";
   }
   else{
-    situacao = "normal";
+    situacao = "Normal";
   }
   return situacao;
 }
