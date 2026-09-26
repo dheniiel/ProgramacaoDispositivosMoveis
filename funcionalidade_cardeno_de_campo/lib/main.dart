@@ -44,31 +44,80 @@ class _TelaComparadorState extends State<TelaComparador>{
   final _prazoPagamentoController = TextEditingController();
 
   final List<Proposta> _propostas = [];
-  String? _erro;
+  String? _erroComprador;
+  String? _erroPreco;
+  String? _erroPrazo;
+
+  String? _validarComprador(String valor){
+    if (valor.trim().isEmpty){
+      return 'Informe o nome do comprador';
+    }
+    if (valor.trim().length < 3){
+      return 'Nome muito curto';
+    }
+    return null;
+  }
+
+  String? _validarPreco(String valor){
+    if (valor.trim().isEmpty){
+      return 'Informe o preço da saca';
+    }
+
+    final preco = double.tryParse(valor.replaceAll(',','.'));
+
+    if (preco == null){
+      return 'Digite um número válido';
+    }
+
+    if (preco <= 0){
+      return 'O preço precisa ser maior que zero';
+    }
+    return null;
+  }
+
+  String? _validarPrazo (String valor){
+    if (valor.trim().isEmpty){
+      return 'Informe o prazo';
+    }
+
+    final prazo = int.tryParse(valor.trim());
+
+    if(prazo == null){
+      return 'Digite um número inteiro de dias';
+    }
+
+    if(prazo <= 0){
+      return 'O prazo precisa ser maior que zero';
+    }
+    return null;
+  }
+
+  bool get _formularioValido => 
+    _validarComprador(_compradorController.text) == null &&
+    _validarPreco(_precoSacaController.text) == null &&
+    _validarPrazo(_prazoPagamentoController.text) == null;
 
   void _adicionarProposta(){
-    final comprador = _compradorController.text.trim();
-    final precoSaca = double.tryParse(_precoSacaController.text.replaceAll(',','.'));
-    final prazoPagamento = int.tryParse(_prazoPagamentoController.text.replaceAll(",","."));
-
     setState((){
-      if (comprador.isEmpty || precoSaca == null || prazoPagamento == null){
-        _erro = "Preencha os três campos!";
+      _erroComprador = _validarComprador(_compradorController.text);
+      _erroPreco = _validarPreco(_precoSacaController.text);
+      _erroPrazo = _validarPrazo(_prazoPagamentoController.text);
+
+      if (_erroComprador != null || _erroPreco != null || _erroPrazo != null){
+        return;
       }
-      else if (precoSaca <= 0 || prazoPagamento <= 0){
-        _erro = "Os valores precisam ser maiores que zero.";
-      } else{
-        _erro = null;
-        _propostas.add(Proposta(
-          comprador: comprador,
-          precoSaca: precoSaca,
-          prazoPagamento: prazoPagamento,
-        ));
-        _propostas.sort((a, b) => b.precoSaca.compareTo(a.precoSaca));
-        _compradorController.clear();
-        _precoSacaController.clear();
-        _prazoPagamentoController.clear();
-      }
+
+      _propostas.add(Proposta(
+        comprador: _compradorController.text.trim(),
+        precoSaca: double.parse(_precoSacaController.text.replaceAll(',', '.')),
+        prazoPagamento: int.parse(_prazoPagamentoController.text.trim()),
+      ));
+
+      _propostas.sort((a, b) => b.precoSaca.compareTo(a.precoSaca));
+
+      _compradorController.clear();
+      _precoSacaController.clear();
+      _prazoPagamentoController.clear();
     });
   }
 
@@ -78,7 +127,15 @@ class _TelaComparadorState extends State<TelaComparador>{
     _prazoPagamentoController.clear();
 
     setState((){
-      _erro = null;
+      _erroComprador = null;
+      _erroPreco = null;
+      _erroPrazo = null;
+    });
+  }
+
+  void _excluirProposta(Proposta proposta){
+    setState((){
+      _propostas.remove(proposta);
     });
   }
   
@@ -135,6 +192,9 @@ class _TelaComparadorState extends State<TelaComparador>{
               controlador: _compradorController,
               rotulo: 'Nome completo do comprador',
               icone: Icons.person,
+              erro: _erroComprador,
+              onChanged: (valor) => 
+                setState(() => _erroComprador = _validarComprador(valor)),
             ),
 
             const SizedBox(height: 24),
@@ -143,6 +203,9 @@ class _TelaComparadorState extends State<TelaComparador>{
               controlador: _precoSacaController,
               rotulo: 'Preço da saca (em R\$)',
               icone: Icons.attach_money_outlined,
+              erro: _erroPreco,
+              onChanged: (valor) => 
+                setState(() => _erroPreco = _validarPreco(valor)),
             ),
 
             const SizedBox(height: 24),
@@ -151,6 +214,9 @@ class _TelaComparadorState extends State<TelaComparador>{
               controlador: _prazoPagamentoController,
               rotulo: 'Prazo de pagamento (em dias)',
               icone: Icons.hourglass_bottom_rounded,
+              erro: _erroPrazo,
+              onChanged: (valor) =>
+                setState (() => _erroPrazo = _validarPrazo(valor)),
             ),
 
             const SizedBox(height: 24),
@@ -159,7 +225,7 @@ class _TelaComparadorState extends State<TelaComparador>{
               children: [
                 Expanded(
                   child: FilledButton.icon(
-                    onPressed: _adicionarProposta,
+                    onPressed: _formularioValido ? _adicionarProposta : null,
                     icon: const Icon(Icons.add),
                     label: const Text('Inserir'),
                     style: FilledButton.styleFrom(
@@ -180,8 +246,8 @@ class _TelaComparadorState extends State<TelaComparador>{
 
             _Resultado(
                 propostas: _propostas,
-                erro: _erro,
-                formatar: _reais
+                formatar: _reais,
+                onExcluir: _excluirProposta,
             ),
           ],
         )
@@ -193,20 +259,26 @@ class _CampoNumero extends StatelessWidget {
   final TextEditingController controlador;
   final String rotulo;
   final IconData icone;
+  final String? erro;
+  final ValueChanged<String> onChanged;
 
   const _CampoNumero({
     required this.controlador,
     required this.rotulo,
     required this.icone,
+    required this.erro,
+    required this.onChanged,
   });
 
   @override
   Widget build(BuildContext context) {
     return TextField(
       controller: controlador,
+      onChanged: onChanged,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       decoration: InputDecoration(
         labelText: rotulo,
+        errorText: erro,
         prefixIcon: Icon(icone, color: const Color(0xFF1E5631)),
         border: const OutlineInputBorder(),
       ),
@@ -218,20 +290,26 @@ class _CampoTexto extends StatelessWidget {
   final TextEditingController controlador;
   final String rotulo;
   final IconData icone;
+  final String? erro;
+  final ValueChanged<String> onChanged;
 
   const _CampoTexto({
     required this.controlador,
     required this.rotulo,
     required this.icone,
+    required this.erro,
+    required this.onChanged,
   });
 
   @override
   Widget build(BuildContext context) {
     return TextField(
       controller: controlador,
+      onChanged: onChanged,
       keyboardType: TextInputType.text,
       decoration: InputDecoration(
         labelText: rotulo,
+        errorText: erro,
         prefixIcon: Icon(icone, color: const Color(0xFF1E5631)),
         border: const OutlineInputBorder(),
       ),
@@ -240,37 +318,18 @@ class _CampoTexto extends StatelessWidget {
 }
 class _Resultado extends StatelessWidget {
   final List<Proposta> propostas;
-  final String? erro;
   final String Function(double) formatar;
+  final void Function(Proposta) onExcluir;
 
   const _Resultado({
     required this.propostas,
-    required this.erro,
     required this.formatar,
+    required this.onExcluir,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (erro != null) {
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color(0xFFFDECEA),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.error_outline, color: Color(0xFFB3261E)),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(erro!,
-                  style: const TextStyle(color: Color(0xFFB3261E))),
-            ),
-          ],
-        ),
-      );
-    }
-
+   
     if (propostas.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -298,9 +357,20 @@ class _Resultado extends StatelessWidget {
               subtitle: Text(formatar(proposta.precoSaca),
                 style: const TextStyle(fontSize: 18),
               ),
-              trailing: Text('${proposta.prazoPagamento} dias',
-                style: const TextStyle(fontSize: 18),
-                ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text (
+                    '${proposta.prazoPagamento} dias',
+                    style: const TextStyle(fontSize: 18),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, color: Color(0xFFB3261E)),
+                    tooltip: 'Excluir proposta',
+                    onPressed: () => onExcluir(proposta),
+                  ),
+                ],
+              )
             ),
         ],
       ),
