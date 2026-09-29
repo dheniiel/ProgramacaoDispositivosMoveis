@@ -1,8 +1,8 @@
 # 🌾 Comparador de Propostas de Venda
 
-Aplicativo Flutter para **comparar propostas de compra de sacas** (ex.: soja, milho, café). O usuário cadastra as ofertas recebidas e o app as organiza automaticamente, **da maior para a menor oferta de preço**.
+Funcionalidade do Carderno de Campo em Flutter para **comparar propostas de compra de sacas** (ex.: soja, milho, café). O usuário cadastra as ofertas recebidas e o app as organiza automaticamente, **da maior para a menor oferta de preço**.
 
-## O que o app faz
+## O que a funcionalidade faz
 
 - **Cadastra propostas** com três informações: nome do comprador, preço da saca (R$) e prazo de pagamento (dias).
 - **Valida os dados em tempo real**, mostrando mensagens de erro enquanto o usuário digita. O botão **Inserir** só é habilitado quando tudo está correto.
