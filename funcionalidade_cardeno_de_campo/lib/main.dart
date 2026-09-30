@@ -344,7 +344,7 @@ class _Resultado extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text( 'Propostas (ordernada por preço)',
+          const Text( 'Propostas',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 28, color: Colors.black54), 
           ),
